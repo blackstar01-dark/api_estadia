@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+//////////////////////
+// ENUMS
+//////////////////////
+
+enum TipoBitacora {
+  ACTIVIDADES_DIARIAS
+  DESCARGA_PIPAS
+  OPERACION_MANTENIMIENTO
+}
+
+enum TipoMantenimiento {
+  TRIMESTRAL
+  ANUAL
+}
+
+//////////////////////
+// MODELOS PRINCIPALES
+//////////////////////
+
+model Estacion {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  razonSocial   String
+  permisoCRE    String   @unique
+  direccion     String
+  createdAt     DateTime @default(now())
+
+  personas      PersonaAutorizada[]
+  bitacoras     Bitacora[]
+}
+
+model PersonaAutorizada {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  cargo        String
+  firmaHash    String
+  estacionId   Int
+  createdAt    DateTime @default(now())
+
+  estacion     Estacion @relation(fields: [estacionId], references: [id])
+  registros    RegistroBitacora[]
+}
+
+model Bitacora {
+  id           Int          @id @default(autoincrement())
+  tipo         TipoBitacora
+  estacionId   Int
+  createdAt    DateTime     @default(now())
+
+  estacion     Estacion     @relation(fields: [estacionId], references: [id])
+  registros    RegistroBitacora[]
+}
+
+//////////////////////
+// REGISTRO LEGAL (INMUTABLE)
+//////////////////////
+
+model RegistroBitacora {
+  id                Int      @id @default(autoincrement())
+  folio             Int
+  fechaHora         DateTime @default(now())
+  descripcion       String
+  firmaResponsable  String
+  personaId         Int
+  bitacoraId        Int
+
+  persona           PersonaAutorizada @relation(fields: [personaId], references: [id])
+  bitacora          Bitacora           @relation(fields: [bitacoraId], references: [id])
+
+  descargaPipa      DescargaPipa?
+  mantenimiento     Mantenimiento?
+
+  @@unique([bitacoraId, folio])
+}
+
+//////////////////////
+// BITÁCORAS ESPECÍFICAS
+//////////////////////
+
+model DescargaPipa {
+  id               Int     @id @default(autoincrement())
+  registroId       Int     @unique
+  numeroPipa       String
+  producto         String
+  volumenRecibido  Float
+  proveedor        String
+
+  registro         RegistroBitacora @relation(fields: [registroId], references: [id])
+}
+
+model Mantenimiento {
+  id             Int               @id @default(autoincrement())
+  registroId     Int               @unique
+  tipo           TipoMantenimiento
+  actividad      String
+  observaciones  String?
+
+  registro       RegistroBitacora  @relation(fields: [registroId], references: [id])
+}
