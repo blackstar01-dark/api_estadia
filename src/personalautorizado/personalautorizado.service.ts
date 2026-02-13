@@ -45,8 +45,9 @@ export class PersonalautorizadoService {
         data: {
           nombre: dto.nombre,
           cargo: dto.cargo,
-          firmaHash: dto.firmaHash,
+          firmaHashPersona: dto.firmaHashPersona,
           estacionId: dto.estacionId,
+          creadoPorId: dto.creadoPorId,
         },
       });
     } catch (error) {

@@ -11,14 +11,14 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { RegistrobitacoraService } from './registrobitacora.service';
+import { RegistroBitacoraService } from './registrobitacora.service';
 import { CreateRegistroBitacoraDto } from './dto/create-registrobitacora.dto';
 import { UpdateRegistroBitacoraDto } from './dto/update-registrobitacora.dto';
 
 @Controller('registrobitacora')
-export class RegistrobitacoraController {
+export class RegistroBitacoraController {
   constructor(
-    private readonly registrobitacoraService: RegistrobitacoraService,
+    private readonly registroBitacoraService: RegistroBitacoraService,
   ) {}
 
   // ==========================
@@ -27,7 +27,7 @@ export class RegistrobitacoraController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() dto: CreateRegistroBitacoraDto) {
-    return this.registrobitacoraService.create(dto);
+    return this.registroBitacoraService.create(dto);
   }
 
   // ==========================
@@ -38,7 +38,7 @@ export class RegistrobitacoraController {
     @Query('page', ParseIntPipe) page = 1,
     @Query('limit', ParseIntPipe) limit = 20,
   ) {
-    return this.registrobitacoraService.findAll(page, limit);
+    return this.registroBitacoraService.findAll(page, limit);
   }
 
   // ==========================
@@ -46,7 +46,7 @@ export class RegistrobitacoraController {
   // ==========================
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.registrobitacoraService.findOne(id);
+    return this.registroBitacoraService.findOne(id);
   }
 
   // ==========================
@@ -57,7 +57,7 @@ export class RegistrobitacoraController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateRegistroBitacoraDto,
   ) {
-    return this.registrobitacoraService.update(id, dto);
+    return this.registroBitacoraService.update(id, dto);
   }
 
   // ==========================
@@ -66,6 +66,6 @@ export class RegistrobitacoraController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', ParseIntPipe) id: number) {
-    await this.registrobitacoraService.remove(id);
+    await this.registroBitacoraService.remove(id);
   }
 }

@@ -1,23 +1,27 @@
-import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { IsInt, IsString, IsNotEmpty, Min } from 'class-validator';
 
 export class CreateRegistroBitacoraDto {
-  @IsInt()
-  @Min(1)
+  @IsInt({ message: 'El folio debe ser un número entero' })
+  @Min(1, { message: 'El folio debe ser mayor a 0' })
   folio: number;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'La descripción es obligatoria' })
+  @IsString({ message: 'La descripción debe ser texto' })
   descripcion: string;
 
-  @IsString()
-  @IsNotEmpty()
-  firmaResponsable: string;
+  @IsNotEmpty({ message: 'La firma del responsable es obligatoria' })
+  @IsString({ message: 'La firma debe ser texto' })
+  firmaHashRegistro: string;
 
-  @IsInt()
-  @Min(1)
+  @IsInt({ message: 'El ID de la persona debe ser un número entero' })
+  @Min(1, { message: 'personaId debe ser mayor a 0' })
   personaId: number;
 
-  @IsInt()
-  @Min(1)
+  @IsInt({ message: 'El ID de la bitácora debe ser un número entero' })
+  @Min(1, { message: 'bitacoraId debe ser mayor a 0' })
   bitacoraId: number;
+
+  @IsInt({ message: 'El ID de la estación debe ser un número entero' })
+  @Min(1, { message: 'estacionId debe ser mayor a 0' })
+  estacionId: number;
 }

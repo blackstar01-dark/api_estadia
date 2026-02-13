@@ -18,6 +18,11 @@ datasource db {
 // ENUMS
 //////////////////////
 
+enum RolUsuario {
+  ADMIN
+  OPERADOR
+}
+
 enum TipoBitacora {
   ACTIVIDADES_DIARIAS
   DESCARGA_PIPAS
@@ -25,6 +30,13 @@ enum TipoBitacora {
 }
 
 enum TipoMantenimiento {
+  PREVENTIVO
+  CORRECTIVO
+}
+
+enum PeriodicidadBitacora {
+  DIARIA
+  POR_EVENTO
   TRIMESTRAL
   ANUAL
 }
@@ -33,38 +45,68 @@ enum TipoMantenimiento {
 // MODELOS PRINCIPALES
 //////////////////////
 
-model Estacion {
-  id            Int      @id @default(autoincrement())
-  nombre        String
-  razonSocial   String
-  permisoCRE    String   @unique
-  direccion     String
-  createdAt     DateTime @default(now())
+model Usuario {
+  id               Int         @id @default(autoincrement())
+  nombre           String
+  correo           String      @unique
+  contrasenaHash   String
+  rol              RolUsuario  @default(OPERADOR)
+  refreshTokenHash  String?
+  createdAt        DateTime    @default(now())
 
-  personas      PersonaAutorizada[]
-  bitacoras     Bitacora[]
+  estaciones       Estacion[]
+  personasCreadas  PersonaAutorizada[]
+  auditorias       Auditoria[]
+}
+
+model Estacion {
+  id              Int      @id @default(autoincrement())
+  nombre          String
+  razonSocial     String
+  rfc             String
+  permisoCRE      String   @unique
+  direccion       String
+  representante   String
+  telefono        String?
+
+  adminId         Int
+  createdAt       DateTime @default(now())
+
+  admin           Usuario  @relation(fields: [adminId], references: [id])
+  personas        PersonaAutorizada[]
+  bitacoras       Bitacora[]
 }
 
 model PersonaAutorizada {
-  id           Int      @id @default(autoincrement())
-  nombre       String
-  cargo        String
-  firmaHash    String
-  estacionId   Int
-  createdAt    DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  nombre           String
+  cargo            String
+  firmaHashPersona String
 
-  estacion     Estacion @relation(fields: [estacionId], references: [id])
-  registros    RegistroBitacora[]
+  estacionId       Int
+  creadoPorId      Int
+  createdAt        DateTime @default(now())
+
+  estacion         Estacion @relation(fields: [estacionId], references: [id])
+  creadoPor        Usuario  @relation(fields: [creadoPorId], references: [id])
+  registros        RegistroBitacora[]
+
+  @@index([estacionId])
 }
 
 model Bitacora {
-  id           Int          @id @default(autoincrement())
-  tipo         TipoBitacora
-  estacionId   Int
-  createdAt    DateTime     @default(now())
+  id             Int                    @id @default(autoincrement())
+  tipo           TipoBitacora
+  periodicidad   PeriodicidadBitacora
+  estacionId     Int
+  fundamento     String                 @default("NOM-005-ASEA-2016")
+  createdAt      DateTime               @default(now())
 
-  estacion     Estacion     @relation(fields: [estacionId], references: [id])
-  registros    RegistroBitacora[]
+  estacion       Estacion               @relation(fields: [estacionId], references: [id])
+  registros      RegistroBitacora[]
+
+  @@unique([estacionId, tipo])
+  @@index([estacionId])
 }
 
 //////////////////////
@@ -72,21 +114,33 @@ model Bitacora {
 //////////////////////
 
 model RegistroBitacora {
-  id                Int      @id @default(autoincrement())
-  folio             Int
-  fechaHora         DateTime @default(now())
-  descripcion       String
-  firmaResponsable  String
-  personaId         Int
-  bitacoraId        Int
+  id                 Int      @id @default(autoincrement())
 
-  persona           PersonaAutorizada @relation(fields: [personaId], references: [id])
-  bitacora          Bitacora           @relation(fields: [bitacoraId], references: [id])
+  folio              Int
+  fechaHora          DateTime @default(now())
+  descripcion        String
 
-  descargaPipa      DescargaPipa?
-  mantenimiento     Mantenimiento?
+  // FIRMA DIGITAL
+  firmaHashRegistro  String
+  firmaAlgoritmo     String   @default("SHA-256")
+  firmaFecha         DateTime @default(now())
 
-  @@unique([bitacoraId, folio])
+  // BLOQUEO LEGAL
+  cerrado            Boolean  @default(true)
+  fechaCierre        DateTime @default(now())
+
+  personaId          Int
+  bitacoraId         Int
+  estacionId         Int
+
+  persona            PersonaAutorizada @relation(fields: [personaId], references: [id])
+  bitacora           Bitacora           @relation(fields: [bitacoraId], references: [id])
+
+  descargaPipa       DescargaPipa?
+  mantenimiento      Mantenimiento?
+
+  @@unique([estacionId, bitacoraId, folio])
+  @@index([personaId])
 }
 
 //////////////////////
@@ -96,6 +150,7 @@ model RegistroBitacora {
 model DescargaPipa {
   id               Int     @id @default(autoincrement())
   registroId       Int     @unique
+
   numeroPipa       String
   producto         String
   volumenRecibido  Float
@@ -107,9 +162,25 @@ model DescargaPipa {
 model Mantenimiento {
   id             Int               @id @default(autoincrement())
   registroId     Int               @unique
+
   tipo           TipoMantenimiento
   actividad      String
   observaciones  String?
 
   registro       RegistroBitacora  @relation(fields: [registroId], references: [id])
+}
+
+//////////////////////
+// AUDITORÍA (TRAZABILIDAD)
+//////////////////////
+
+model Auditoria {
+  id          Int      @id @default(autoincrement())
+  tabla       String
+  registroId  Int
+  accion      String
+  fecha       DateTime @default(now())
+
+  usuarioId   Int
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
 }

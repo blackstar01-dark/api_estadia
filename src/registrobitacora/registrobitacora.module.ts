@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RegistrobitacoraService } from './registrobitacora.service';
-import { RegistrobitacoraController } from './registrobitacora.controller';
+import { RegistroBitacoraService } from './registrobitacora.service';
+import { RegistroBitacoraController } from './registrobitacora.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
-  controllers: [RegistrobitacoraController],
-  providers: [RegistrobitacoraService],
+  controllers: [RegistroBitacoraController],
+  providers: [RegistroBitacoraService],
   imports: [PrismaModule],
 })
 export class RegistrobitacoraModule {}

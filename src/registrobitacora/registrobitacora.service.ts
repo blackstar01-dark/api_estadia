@@ -10,7 +10,7 @@ import { UpdateRegistroBitacoraDto } from './dto/update-registrobitacora.dto';
 import { Prisma } from 'generated/prisma/client';
 
 @Injectable()
-export class RegistrobitacoraService {
+export class RegistroBitacoraService {
   constructor(private readonly prisma: PrismaService) {}
 
   // ==========================
@@ -36,12 +36,10 @@ export class RegistrobitacoraService {
     }
 
     // Validar folio único por bitácora
-    const exists = await this.prisma.registroBitacora.findUnique({
+    const exists = await this.prisma.registroBitacora.findFirst({
       where: {
-        bitacoraId_folio: {
-          bitacoraId: dto.bitacoraId,
-          folio: dto.folio,
-        },
+        bitacoraId: dto.bitacoraId,
+        folio: dto.folio,
       },
     });
 
@@ -54,9 +52,10 @@ export class RegistrobitacoraService {
         data: {
           folio: dto.folio,
           descripcion: dto.descripcion,
-          firmaResponsable: dto.firmaResponsable,
+          firmaHashRegistro: dto.firmaHashRegistro,
           personaId: dto.personaId,
           bitacoraId: dto.bitacoraId,
+          estacionId: dto.estacionId, // <-- Importante, ahora sí se pasa
         },
       });
     } catch (error) {
@@ -75,22 +74,10 @@ export class RegistrobitacoraService {
     return this.prisma.registroBitacora.findMany({
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: {
-        fechaHora: 'desc',
-      },
+      orderBy: { fechaHora: 'desc' },
       include: {
-        persona: {
-          select: {
-            id: true,
-            nombre: true,
-          },
-        },
-        bitacora: {
-          select: {
-            id: true,
-            tipo: true,
-          },
-        },
+        persona: { select: { id: true, nombre: true } },
+        bitacora: { select: { id: true, tipo: true } },
       },
     });
   }
@@ -102,18 +89,8 @@ export class RegistrobitacoraService {
     const registro = await this.prisma.registroBitacora.findUnique({
       where: { id },
       include: {
-        persona: {
-          select: {
-            id: true,
-            nombre: true,
-          },
-        },
-        bitacora: {
-          select: {
-            id: true,
-            tipo: true,
-          },
-        },
+        persona: { select: { id: true, nombre: true } },
+        bitacora: { select: { id: true, tipo: true } },
         descargaPipa: true,
         mantenimiento: true,
       },

@@ -13,6 +13,9 @@ import { Prisma } from 'generated/prisma/client';
 export class BitacoraService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // ==========================
+  // CREATE
+  // ==========================
   async create(dto: CreateBitacoraDto) {
     const estacion = await this.prisma.estacion.findUnique({
       where: { id: dto.estacionId },
@@ -26,6 +29,8 @@ export class BitacoraService {
       return await this.prisma.bitacora.create({
         data: {
           tipo: dto.tipo,
+          periodicidad: dto.periodicidad,
+          fundamento: dto.fundamento ?? 'NOM-005-ASEA-2016',
           estacionId: dto.estacionId,
         },
       });
@@ -53,11 +58,20 @@ export class BitacoraService {
             nombre: true,
           },
         },
-        registros: true,
+        registros: {
+          select: {
+            id: true,
+            folio: true,
+            fechaHora: true,
+          },
+        },
       },
     });
   }
 
+  // ==========================
+  // FIND ONE
+  // ==========================
   async findOne(id: number) {
     const bitacora = await this.prisma.bitacora.findUnique({
       where: { id },
@@ -69,9 +83,7 @@ export class BitacoraService {
           },
         },
         registros: {
-          orderBy: {
-            fechaHora: 'desc',
-          },
+          orderBy: { fechaHora: 'desc' },
           include: {
             persona: {
               select: {
@@ -93,13 +105,21 @@ export class BitacoraService {
   }
 
   // ==========================
-  // UPDATE
+  // UPDATE (RESTRINGIDO)
   // ==========================
   async update(id: number, dto: UpdateBitacoraDto) {
+    if (!dto.fundamento) {
+      throw new BadRequestException(
+        'Solo se permite actualizar el fundamento legal',
+      );
+    }
+
     try {
       return await this.prisma.bitacora.update({
         where: { id },
-        data: dto,
+        data: {
+          fundamento: dto.fundamento,
+        },
       });
     } catch (error) {
       if (
@@ -112,26 +132,24 @@ export class BitacoraService {
     }
   }
 
-  async remove(id: number) {
-    try {
-      return await this.prisma.bitacora.delete({
-        where: { id },
-      });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException('Bitácora no encontrada');
-      }
-      this.handlePrismaError(error);
-    }
+  // ==========================
+  // DELETE (PROHIBIDO POR NOM)
+  // ==========================
+  async remove() {
+    throw new BadRequestException(
+      'Las bitácoras no pueden eliminarse por cumplimiento de la NOM-005-ASEA-2016',
+    );
   }
 
+  // ==========================
+  // PRISMA ERROR HANDLER
+  // ==========================
   private handlePrismaError(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        throw new ConflictException('La bitácora ya existe para esta estación');
+        throw new ConflictException(
+          'La bitácora ya existe para esta estación, tipo y periodicidad',
+        );
       }
     }
     throw error;

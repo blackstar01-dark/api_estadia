@@ -3,9 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   ParseIntPipe,
   Query,
   HttpCode,
@@ -14,14 +12,13 @@ import {
 } from '@nestjs/common';
 import { BitacoraService } from './bitacora.service';
 import { CreateBitacoraDto } from './dto/create-bitacora.dto';
-import { UpdateBitacoraDto } from './dto/update-bitacora.dto';
 
 @Controller('bitacora')
 export class BitacoraController {
   constructor(private readonly bitacoraService: BitacoraService) {}
 
   // ==========================
-  // CREATE
+  // CREATE (ÚNICA OPERACIÓN DE ESCRITURA)
   // ==========================
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -46,25 +43,5 @@ export class BitacoraController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.bitacoraService.findOne(id);
-  }
-
-  // ==========================
-  // UPDATE
-  // ==========================
-  @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateBitacoraDto,
-  ) {
-    return this.bitacoraService.update(id, dto);
-  }
-
-  // ==========================
-  // DELETE
-  // ==========================
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    await this.bitacoraService.remove(id);
   }
 }
