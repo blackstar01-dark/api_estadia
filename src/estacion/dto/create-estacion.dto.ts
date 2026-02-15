@@ -4,7 +4,6 @@ import {
   Length,
   Matches,
   IsOptional,
-  IsInt,
 } from 'class-validator';
 
 export class CreateEstacionDto {
@@ -46,7 +45,4 @@ export class CreateEstacionDto {
   @IsOptional()
   @IsString()
   telefono?: string;
-
-  @IsInt({ message: 'El administrador debe ser un id válido' })
-  adminId: number;
 }
