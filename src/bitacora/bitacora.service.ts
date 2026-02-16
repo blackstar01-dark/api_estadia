@@ -13,31 +13,6 @@ import { Prisma } from 'generated/prisma/client';
 export class BitacoraService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ==========================
-  // CREATE
-  // ==========================
-  async create(dto: CreateBitacoraDto) {
-    const estacion = await this.prisma.estacion.findUnique({
-      where: { id: dto.estacionId },
-    });
-
-    if (!estacion) {
-      throw new NotFoundException('Estación no encontrada');
-    }
-
-    try {
-      return await this.prisma.bitacora.create({
-        data: {
-          tipo: dto.tipo,
-          periodicidad: dto.periodicidad,
-          fundamento: dto.fundamento ?? 'NOM-005-ASEA-2016',
-          estacionId: dto.estacionId,
-        },
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
 
   // ==========================
   // FIND ALL (PAGINADO)
@@ -148,7 +123,7 @@ export class BitacoraService {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         throw new ConflictException(
-          'La bitácora ya existe para esta estación, tipo y periodicidad',
+          'La bitácora ya existe para esta estación y tipo',
         );
       }
     }

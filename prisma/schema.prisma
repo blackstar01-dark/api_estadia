@@ -118,7 +118,7 @@ model RegistroBitacora {
   folio              Int
   fechaHora          DateTime @default(now())
   descripcion        String
-  periodicidad       PeriodicidadBitacora?
+  periodicidad       PeriodicidadBitacora
 
   // FIRMA DIGITAL
   firmaHashRegistro  String

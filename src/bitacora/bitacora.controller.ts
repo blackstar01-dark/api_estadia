@@ -20,11 +20,7 @@ export class BitacoraController {
   // ==========================
   // CREATE (ÚNICA OPERACIÓN DE ESCRITURA)
   // ==========================
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateBitacoraDto) {
-    return this.bitacoraService.create(dto);
-  }
+ 
 
   // ==========================
   // FIND ALL (PAGINADO)
