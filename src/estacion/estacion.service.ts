@@ -1,4 +1,3 @@
-// src/estacion/estacion.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -50,12 +49,33 @@ export class EstacionService {
 
     if (exists) throw new ConflictException('La estación ya existe');
 
-    return this.prisma.estacion.create({
-      data: {
-        ...dto,
-        adminId,
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const nuevaEstacion = await tx.estacion.create({
+        data: {
+          ...dto,
+          adminId,
+        },
+      });
+
+      await tx.bitacora.createMany({
+        data: [
+          {
+            tipo: 'ACTIVIDADES_DIARIAS',
+            estacionId: nuevaEstacion.id,
+          },
+          {
+            tipo: 'DESCARGA_PIPAS',
+            estacionId: nuevaEstacion.id
+          },
+          {
+            tipo: 'OPERACION_MANTENIMIENTO',
+            estacionId: nuevaEstacion.id,
+          },
+        ],
+      });
+
+      return nuevaEstacion;
+    })
   }
 
   async update(id: number, dto: UpdateEstacionDto, adminId: number) {

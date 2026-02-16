@@ -97,7 +97,6 @@ model PersonaAutorizada {
 model Bitacora {
   id             Int                    @id @default(autoincrement())
   tipo           TipoBitacora
-  periodicidad   PeriodicidadBitacora
   estacionId     Int
   fundamento     String                 @default("NOM-005-ASEA-2016")
   createdAt      DateTime               @default(now())
@@ -119,6 +118,7 @@ model RegistroBitacora {
   folio              Int
   fechaHora          DateTime @default(now())
   descripcion        String
+  periodicidad       PeriodicidadBitacora?
 
   // FIRMA DIGITAL
   firmaHashRegistro  String
