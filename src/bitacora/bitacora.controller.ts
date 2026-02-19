@@ -34,10 +34,26 @@ export class BitacoraController {
   }
 
   // ==========================
+  // FIND BY TIPO (ENUM DIRECTO)
+  // ==========================
+  @Get('tipo/:tipo')
+  findByTipo(@Param('tipo') tipo: string) {
+    return this.bitacoraService.findByTipo(tipo);
+  }
+
+  // ==========================
   // FIND ONE
   // ==========================
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.bitacoraService.findOne(id);
+  }
+
+  // ==========================
+  // FIND BY ESTACION
+  // ==========================
+  @Get('/estacion/:id')
+  findByEstacion(@Param('id', ParseIntPipe) id: number) {
+    return this.bitacoraService.findByEstacion(id);
   }
 }

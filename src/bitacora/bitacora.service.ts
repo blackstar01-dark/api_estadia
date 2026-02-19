@@ -7,7 +7,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBitacoraDto } from './dto/create-bitacora.dto';
 import { UpdateBitacoraDto } from './dto/update-bitacora.dto';
-import { Prisma } from 'generated/prisma/client';
+import { Prisma, TipoBitacora } from 'generated/prisma/client';
 
 @Injectable()
 export class BitacoraService {
@@ -31,6 +31,7 @@ export class BitacoraService {
           select: {
             id: true,
             nombre: true,
+            permisoCRE: true
           },
         },
         registros: {
@@ -38,6 +39,80 @@ export class BitacoraService {
             id: true,
             folio: true,
             fechaHora: true,
+          },
+        },
+      },
+    });
+  }
+
+  // ==========================
+  // FIND BY ESTACION
+  // ==========================
+  async findByEstacion(estacionId: number){
+    if(!estacionId || estacionId < 1) {
+      throw new BadRequestException('ID de estacion inválido');
+    }
+
+    return this.prisma.bitacora.findMany({
+      where: {
+        estacionId: estacionId,
+      },
+      orderBy: { createdAt: 'desc'},
+      include: {
+        estacion: {
+          select: {
+            id: true,
+            nombre: true,
+            permisoCRE: true,
+          },
+        },
+        registros: {
+          orderBy: { fechaHora: 'desc'},
+          include: {
+            persona: {
+              select: {
+                id: true,
+                nombre: true,
+                cargo: true
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // ==========================
+  // FIND BY TIPO (ENUM DIRECTO)
+  // ==========================
+  async findByTipo(tipo: string) {
+    if(!Object.values(TipoBitacora).includes(tipo as TipoBitacora)) {
+      throw new BadRequestException('Tipo de bitácora inválida');
+    }
+
+    return this.prisma.bitacora.findMany({
+      where: {
+        tipo: tipo as TipoBitacora,
+      },
+      orderBy: { createdAt: 'desc'},
+      include: {
+        estacion: {
+          select: {
+            id: true,
+            nombre: true,
+            permisoCRE: true,
+          },
+        },
+        registros: {
+          orderBy: { fechaHora: 'desc'},
+          include: {
+            persona: {
+              select: {
+                id: true,
+                nombre: true,
+                cargo: true,
+              },
+            },
           },
         },
       },
@@ -55,6 +130,7 @@ export class BitacoraService {
           select: {
             id: true,
             nombre: true,
+            permisoCRE: true
           },
         },
         registros: {

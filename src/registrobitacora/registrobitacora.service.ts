@@ -55,7 +55,8 @@ export class RegistroBitacoraService {
           firmaHashRegistro: dto.firmaHashRegistro,
           personaId: dto.personaId,
           bitacoraId: dto.bitacoraId,
-          estacionId: dto.estacionId, // <-- Importante, ahora sí se pasa
+          estacionId: dto.estacionId,
+          periodicidad: dto.periodicidad,
         },
       });
     } catch (error) {

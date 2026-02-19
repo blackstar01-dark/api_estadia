@@ -1,5 +1,6 @@
-import { IsInt, IsString, IsNotEmpty, Min } from 'class-validator';
+import { IsInt, IsString, IsNotEmpty, Min, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PeriodicidadBitacora } from 'generated/prisma/client';
 
 export class CreateRegistroBitacoraDto {
 
@@ -11,6 +12,11 @@ export class CreateRegistroBitacoraDto {
   @IsNotEmpty({ message: 'La descripción es obligatoria' })
   @IsString({ message: 'La descripción debe ser texto' })
   descripcion: string;
+
+  @IsEnum(PeriodicidadBitacora, {
+    message: 'La periodicidad no es válida'
+  })
+  periodicidad: PeriodicidadBitacora;
 
   @IsNotEmpty({ message: 'La firma del responsable es obligatoria' })
   @IsString({ message: 'La firma debe ser texto' })
