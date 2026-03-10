@@ -20,7 +20,7 @@ export class RolesGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    // Si la ruta no tiene @Roles(), permitir acceso
+    
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
@@ -28,7 +28,7 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const user = request.user;
 
-    // Si no hay usuario en el request, no está autenticado
+    
     if (!user) {
       throw new UnauthorizedException('Usuario no autenticado');
     }

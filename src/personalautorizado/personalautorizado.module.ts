@@ -7,5 +7,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   controllers: [PersonalautorizadoController],
   providers: [PersonalautorizadoService],
   imports: [PrismaModule],
+  exports: [PersonalautorizadoService]
 })
 export class PersonalautorizadoModule {}

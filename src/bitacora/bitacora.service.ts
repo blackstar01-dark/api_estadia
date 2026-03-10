@@ -46,6 +46,13 @@ export class BitacoraService {
   }
 
   // ==========================
+  // COUNT
+  // ==========================
+  async count(): Promise<number> {
+    return this.prisma.bitacora.count();
+  }
+
+  // ==========================
   // FIND BY ESTACION
   // ==========================
   async findByEstacion(estacionId: number){
@@ -154,6 +161,8 @@ export class BitacoraService {
 
     return bitacora;
   }
+
+  
 
   // ==========================
   // UPDATE (RESTRINGIDO)

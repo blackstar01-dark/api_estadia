@@ -11,6 +11,8 @@ import { UsuarioModule } from './usuario/usuario.module';
 import { AuthModule } from './auth/auth.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { AuthpersonalModule } from './authpersonal/authpersonal.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { APP_GUARD } from '@nestjs/core';
     RegistrobitacoraModule,
     UsuarioModule,
     AuthModule,
+    DashboardModule,
+    AuthpersonalModule,
   ],
   controllers: [AppController],
   providers: [

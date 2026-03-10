@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePersonaAutorizadaDto } from './dto/create-personalautorizado.dto';
 import { UpdatePersonalautorizadoDto } from './dto/update-personalautorizado.dto';
 import { Prisma } from '../../generated/prisma/client';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class PersonalautorizadoService {
@@ -16,10 +17,13 @@ export class PersonalautorizadoService {
   // ==========================
   // CREATE
   // ==========================
-  async create(dto: CreatePersonaAutorizadaDto) {
+  async create(dto: CreatePersonaAutorizadaDto, userId: number) {
     // Validar estación
-    const estacion = await this.prisma.estacion.findUnique({
-      where: { id: dto.estacionId },
+    const estacion = await this.prisma.estacion.findFirst({
+      where: { 
+        id: dto.estacionId,
+        adminId: userId,
+       },
     });
 
     if (!estacion) {
@@ -39,20 +43,47 @@ export class PersonalautorizadoService {
         'La persona autorizada ya existe en esta estación',
       );
     }
+    
+    const firmaHash = crypto
+    .createHash('sha256')
+    .update(dto.firmaHashPersona)
+    .digest('hex');
 
-    try {
-      return await this.prisma.personaAutorizada.create({
-        data: {
-          nombre: dto.nombre,
-          cargo: dto.cargo,
-          firmaHashPersona: dto.firmaHashPersona,
-          estacionId: dto.estacionId,
-          creadoPorId: dto.creadoPorId,
-        },
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
+    return this.prisma.personaAutorizada.create({
+      data: {
+        nombre: dto.nombre,
+        cargo: dto.cargo,
+        firmaHashPersona: firmaHash,
+        estacionId: dto.estacionId,
+        creadoPorId: userId,
+      },
+    });
+  }
+
+  async validatePersonal(nombre: string, firma?: string) {
+    if (!firma) return null
+
+    const persona = await this.prisma.personaAutorizada.findFirst({
+      where: { nombre },
+    });
+
+    if(!persona) return null;
+
+    const firmaHash = crypto
+    .createHash('sha256')
+    .update(firma)
+    .digest('hex');
+
+    if (persona.firmaHashPersona !== firmaHash) return null;
+
+    return persona;
+  }
+
+  // ==========================
+  // COUNT
+  // ==========================
+  async count(): Promise<number> {
+    return this.prisma.personaAutorizada.count();
   }
 
   // ==========================
@@ -76,6 +107,13 @@ export class PersonalautorizadoService {
             nombre: true,
           },
         },
+        creadoPor: {
+          select: {
+            id: true,
+            nombre: true,
+            correo: true,
+          }
+        }
       },
     });
   }

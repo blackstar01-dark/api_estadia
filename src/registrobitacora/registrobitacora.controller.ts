@@ -10,10 +10,15 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { RegistroBitacoraService } from './registrobitacora.service';
 import { CreateRegistroBitacoraDto } from './dto/create-registrobitacora.dto';
 import { UpdateRegistroBitacoraDto } from './dto/update-registrobitacora.dto';
+import { JwtAuthGuardPersonal } from 'src/authpersonal/guards/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtCookieGuard } from 'src/auth/guards/jwt-cookie.guard';
 
 @Controller('registrobitacora')
 export class RegistroBitacoraController {
@@ -25,9 +30,11 @@ export class RegistroBitacoraController {
   // CREATE
   // ==========================
   @Post()
+  @UseGuards(JwtCookieGuard)
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateRegistroBitacoraDto) {
-    return this.registroBitacoraService.create(dto);
+  create(@Body() dto: CreateRegistroBitacoraDto, @Req() req: any) {
+    const personalID = req.user.id;
+    return this.registroBitacoraService.create(dto, personalID);
   }
 
   // ==========================
@@ -48,6 +55,16 @@ export class RegistroBitacoraController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.registroBitacoraService.findOne(id);
   }
+
+  // ==========================
+  // FIND BY BITACORA
+  // ==========================
+  @Get('bitacora/:id')
+  @UseGuards(JwtAuthGuard)
+  findByBitacora(@Param('id', ParseIntPipe) id: number) {
+    return this.registroBitacoraService.findByBitacora(id)
+  }
+
 
   // ==========================
   // UPDATE

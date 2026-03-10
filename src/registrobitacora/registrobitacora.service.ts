@@ -16,26 +16,27 @@ export class RegistroBitacoraService {
   // ==========================
   // CREATE
   // ==========================
-  async create(dto: CreateRegistroBitacoraDto) {
-    // Validar persona autorizada
+  async create(dto: CreateRegistroBitacoraDto, personalId: number) {
+    if(!personalId) {
+      throw new ConflictException("Id personal es obligatorio");
+    }
+
     const persona = await this.prisma.personaAutorizada.findUnique({
-      where: { id: dto.personaId },
+      where: { id: personalId },
     });
 
-    if (!persona) {
+    if(!persona) {
       throw new NotFoundException('Personal no autorizado');
     }
 
-    // Validar bitácora
     const bitacora = await this.prisma.bitacora.findUnique({
       where: { id: dto.bitacoraId },
     });
 
     if (!bitacora) {
-      throw new NotFoundException('Bitácora no encontrada');
+      throw new NotFoundException('Bitácora no encontrada')
     }
 
-    // Validar folio único por bitácora
     const exists = await this.prisma.registroBitacora.findFirst({
       where: {
         bitacoraId: dto.bitacoraId,
@@ -44,7 +45,7 @@ export class RegistroBitacoraService {
     });
 
     if (exists) {
-      throw new ConflictException('El folio ya existe para esta bitácora');
+      throw new ConflictException('El folio ya existe para esta bitácora')
     }
 
     try {
@@ -53,14 +54,14 @@ export class RegistroBitacoraService {
           folio: dto.folio,
           descripcion: dto.descripcion,
           firmaHashRegistro: dto.firmaHashRegistro,
-          personaId: dto.personaId,
+          personaId: personalId,
           bitacoraId: dto.bitacoraId,
           estacionId: dto.estacionId,
           periodicidad: dto.periodicidad,
         },
       });
     } catch (error) {
-      this.handlePrismaError(error);
+      this.handlePrismaError(error)
     }
   }
 
@@ -79,6 +80,33 @@ export class RegistroBitacoraService {
       include: {
         persona: { select: { id: true, nombre: true } },
         bitacora: { select: { id: true, tipo: true } },
+      },
+    });
+  }
+
+  // ==========================
+  // FIND BY BITACORA
+  // ==========================
+  async findByBitacora(bitacoraId: number) {
+    if(!bitacoraId || bitacoraId < 1) {
+      throw new BadRequestException('ID de bitácora inválido');
+    }
+
+    const bitacoraExists = await this.prisma.bitacora.findUnique({
+      where: { id: bitacoraId},
+    });
+
+    if (!bitacoraExists) {
+      throw new NotFoundException('Bitácora no encontrada');
+    }
+
+    return this.prisma.registroBitacora.findMany({
+      where: { bitacoraId },
+      orderBy: { fechaHora: 'desc'},
+      include: {
+        persona: {
+          select: { id: true, nombre: true}
+        },
       },
     });
   }

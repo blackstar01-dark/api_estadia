@@ -6,6 +6,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEstacionDto } from './dto/create-estacion.dto';
 import { UpdateEstacionDto } from './dto/update-estacion.dto';
+import { threadId } from 'worker_threads';
 
 @Injectable()
 export class EstacionService {
@@ -16,6 +17,10 @@ export class EstacionService {
     return this.prisma.estacion.findMany({
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async count(): Promise<number> {
+    return this.prisma.estacion.count();
   }
 
   async findOnePublic(id: number) {

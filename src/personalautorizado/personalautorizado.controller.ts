@@ -10,10 +10,18 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  DefaultValuePipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { PersonalautorizadoService } from './personalautorizado.service';
 import { CreatePersonaAutorizadaDto } from './dto/create-personalautorizado.dto';
 import { UpdatePersonalautorizadoDto } from './dto/update-personalautorizado.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtCookieGuard } from 'src/auth/guards/jwt-cookie.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @Controller('personalautorizado')
 export class PersonalautorizadoController {
@@ -25,9 +33,11 @@ export class PersonalautorizadoController {
   // CREATE
   // ==========================
   @Post()
+  @UseGuards(JwtCookieGuard, RolesGuard )
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreatePersonaAutorizadaDto) {
-    return this.personalAutorizadoService.create(dto);
+  create(@Body() dto: CreatePersonaAutorizadaDto, @Req() req) {
+    return this.personalAutorizadoService.create(dto, req.user.id);
   }
 
   // ==========================
@@ -35,8 +45,8 @@ export class PersonalautorizadoController {
   // ==========================
   @Get()
   findAll(
-    @Query('page', ParseIntPipe) page = 1,
-    @Query('limit', ParseIntPipe) limit = 20,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     return this.personalAutorizadoService.findAll(page, limit);
   }

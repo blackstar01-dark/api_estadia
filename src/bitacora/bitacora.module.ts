@@ -7,5 +7,6 @@ import { PrismaModule } from 'src/prisma/prisma.module';
   controllers: [BitacoraController],
   providers: [BitacoraService],
   imports: [PrismaModule],
+  exports: [BitacoraService]
 })
 export class BitacoraModule {}

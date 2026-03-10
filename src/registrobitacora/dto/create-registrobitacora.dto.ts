@@ -22,10 +22,6 @@ export class CreateRegistroBitacoraDto {
   @IsString({ message: 'La firma debe ser texto' })
   firmaHashRegistro: string;
 
-  @Type(() => Number)
-  @IsInt({ message: 'El ID de la persona debe ser un número entero' })
-  @Min(1, { message: 'personaId debe ser mayor a 0' })
-  personaId: number;
 
   @Type(() => Number)
   @IsInt({ message: 'El ID de la bitácora debe ser un número entero' })
