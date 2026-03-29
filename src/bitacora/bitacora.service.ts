@@ -5,14 +5,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateBitacoraDto } from './dto/create-bitacora.dto';
 import { UpdateBitacoraDto } from './dto/update-bitacora.dto';
 import { Prisma, TipoBitacora } from 'generated/prisma/client';
 
 @Injectable()
 export class BitacoraService {
   constructor(private readonly prisma: PrismaService) {}
-
 
   // ==========================
   // FIND ALL (PAGINADO)
@@ -31,7 +29,7 @@ export class BitacoraService {
           select: {
             id: true,
             nombre: true,
-            permisoCRE: true
+            permisoCRE: true,
           },
         },
         registros: {
@@ -39,6 +37,36 @@ export class BitacoraService {
             id: true,
             folio: true,
             fechaHora: true,
+          },
+        },
+      },
+    });
+  }
+
+  // ==========================
+  // FIND BITACORAS POR PERSONAL AUTORIZADO
+  // ==========================
+  async findByPersonal(personalId: number) {
+    // Obtenemos la estación del personal
+    const personal = await this.prisma.personaAutorizada.findUnique({
+      where: { id: personalId },
+      select: { estacionId: true },
+    });
+
+    if (!personal) {
+      throw new NotFoundException('Personal no encontrado');
+    }
+
+    // Traemos solo las bitácoras de la estación a la que pertenece el personal
+    return this.prisma.bitacora.findMany({
+      where: { estacionId: personal.estacionId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        estacion: { select: { id: true, nombre: true, permisoCRE: true } },
+        registros: {
+          orderBy: { fechaHora: 'desc' },
+          include: {
+            persona: { select: { id: true, nombre: true, cargo: true } },
           },
         },
       },
@@ -55,8 +83,8 @@ export class BitacoraService {
   // ==========================
   // FIND BY ESTACION
   // ==========================
-  async findByEstacion(estacionId: number){
-    if(!estacionId || estacionId < 1) {
+  async findByEstacion(estacionId: number) {
+    if (!estacionId || estacionId < 1) {
       throw new BadRequestException('ID de estacion inválido');
     }
 
@@ -64,7 +92,7 @@ export class BitacoraService {
       where: {
         estacionId: estacionId,
       },
-      orderBy: { createdAt: 'desc'},
+      orderBy: { createdAt: 'desc' },
       include: {
         estacion: {
           select: {
@@ -74,13 +102,13 @@ export class BitacoraService {
           },
         },
         registros: {
-          orderBy: { fechaHora: 'desc'},
+          orderBy: { fechaHora: 'desc' },
           include: {
             persona: {
               select: {
                 id: true,
                 nombre: true,
-                cargo: true
+                cargo: true,
               },
             },
           },
@@ -93,7 +121,7 @@ export class BitacoraService {
   // FIND BY TIPO (ENUM DIRECTO)
   // ==========================
   async findByTipo(tipo: string) {
-    if(!Object.values(TipoBitacora).includes(tipo as TipoBitacora)) {
+    if (!Object.values(TipoBitacora).includes(tipo as TipoBitacora)) {
       throw new BadRequestException('Tipo de bitácora inválida');
     }
 
@@ -101,7 +129,7 @@ export class BitacoraService {
       where: {
         tipo: tipo as TipoBitacora,
       },
-      orderBy: { createdAt: 'desc'},
+      orderBy: { createdAt: 'desc' },
       include: {
         estacion: {
           select: {
@@ -111,7 +139,7 @@ export class BitacoraService {
           },
         },
         registros: {
-          orderBy: { fechaHora: 'desc'},
+          orderBy: { fechaHora: 'desc' },
           include: {
             persona: {
               select: {
@@ -137,7 +165,7 @@ export class BitacoraService {
           select: {
             id: true,
             nombre: true,
-            permisoCRE: true
+            permisoCRE: true,
           },
         },
         registros: {
@@ -161,8 +189,6 @@ export class BitacoraService {
 
     return bitacora;
   }
-
-  
 
   // ==========================
   // UPDATE (RESTRINGIDO)
@@ -190,15 +216,6 @@ export class BitacoraService {
       }
       this.handlePrismaError(error);
     }
-  }
-
-  // ==========================
-  // DELETE (PROHIBIDO POR NOM)
-  // ==========================
-  async remove() {
-    throw new BadRequestException(
-      'Las bitácoras no pueden eliminarse por cumplimiento de la NOM-005-ASEA-2016',
-    );
   }
 
   // ==========================

@@ -17,11 +17,10 @@ import {
 import { PersonalautorizadoService } from './personalautorizado.service';
 import { CreatePersonaAutorizadaDto } from './dto/create-personalautorizado.dto';
 import { UpdatePersonalautorizadoDto } from './dto/update-personalautorizado.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { JwtCookieGuard } from 'src/auth/guards/jwt-cookie.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import type { RequestWithPersonal } from 'src/authpersonal/interface/request-with-personal-interface';
 
 @Controller('personalautorizado')
 export class PersonalautorizadoController {
@@ -33,10 +32,13 @@ export class PersonalautorizadoController {
   // CREATE
   // ==========================
   @Post()
-  @UseGuards(JwtCookieGuard, RolesGuard )
+  @UseGuards(JwtCookieGuard, RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreatePersonaAutorizadaDto, @Req() req) {
+  create(
+    @Body() dto: CreatePersonaAutorizadaDto,
+    @Req() req: RequestWithPersonal,
+  ) {
     return this.personalAutorizadoService.create(dto, req.user.id);
   }
 
@@ -52,6 +54,15 @@ export class PersonalautorizadoController {
   }
 
   // ==========================
+  // MI PERFIL 🔐 (IMPORTANTE: antes de :id)
+  // ==========================
+  @Get('me')
+  @UseGuards(JwtCookieGuard)
+  getMyProfile(@Req() req: RequestWithPersonal) {
+    return this.personalAutorizadoService.findOne(req.user.id);
+  }
+
+  // ==========================
   // FIND ONE
   // ==========================
   @Get(':id')
@@ -63,6 +74,8 @@ export class PersonalautorizadoController {
   // UPDATE
   // ==========================
   @Patch(':id')
+  @UseGuards(JwtCookieGuard, RolesGuard)
+  @Roles('ADMIN')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdatePersonalautorizadoDto,
@@ -74,6 +87,8 @@ export class PersonalautorizadoController {
   // DELETE
   // ==========================
   @Delete(':id')
+  @UseGuards(JwtCookieGuard, RolesGuard)
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.personalAutorizadoService.remove(id);

@@ -13,6 +13,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AuthpersonalModule } from './authpersonal/authpersonal.module';
+import { MantenimientoModule } from './mantenimiento/mantenimiento.module';
+import { PlantillaMantenimientoModule } from './plantilla-mantenimiento/plantilla-mantenimiento.module';
+import { ProgramaMantenimientoModule } from './programa-mantenimiento/programa-mantenimiento.module';
 
 @Module({
   imports: [
@@ -36,6 +39,9 @@ import { AuthpersonalModule } from './authpersonal/authpersonal.module';
     AuthModule,
     DashboardModule,
     AuthpersonalModule,
+    MantenimientoModule,
+    PlantillaMantenimientoModule,
+    ProgramaMantenimientoModule,
   ],
   controllers: [AppController],
   providers: [

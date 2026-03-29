@@ -10,6 +10,11 @@ generator client {
   moduleFormat = "cjs"
 }
 
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "./ERD.svg"
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -39,6 +44,7 @@ enum PeriodicidadBitacora {
   POR_EVENTO
   TRIMESTRAL
   ANUAL
+  MENSUAL
 }
 
 //////////////////////
@@ -51,7 +57,7 @@ model Usuario {
   correo           String      @unique
   contrasenaHash   String
   rol              RolUsuario  @default(OPERADOR)
-  refreshTokenHash  String?
+  refreshTokenHash String?
   createdAt        DateTime    @default(now())
 
   estaciones       Estacion[]
@@ -75,6 +81,8 @@ model Estacion {
   admin           Usuario  @relation(fields: [adminId], references: [id])
   personas        PersonaAutorizada[]
   bitacoras       Bitacora[]
+
+  programasMantenimiento ProgramaMantenimiento[]
 }
 
 model PersonaAutorizada {
@@ -118,14 +126,12 @@ model RegistroBitacora {
   folio              Int
   fechaHora          DateTime @default(now())
   descripcion        String
-  periodicidad       PeriodicidadBitacora
+  periodicidad       PeriodicidadBitacora?
 
-  // FIRMA DIGITAL
   firmaHashRegistro  String
   firmaAlgoritmo     String   @default("SHA-256")
   firmaFecha         DateTime @default(now())
 
-  // BLOQUEO LEGAL
   cerrado            Boolean  @default(true)
   fechaCierre        DateTime @default(now())
 
@@ -167,7 +173,41 @@ model Mantenimiento {
   actividad      String
   observaciones  String?
 
+  programaId     Int?
+
+  programa       ProgramaMantenimiento? @relation(fields: [programaId], references: [id])
+
   registro       RegistroBitacora  @relation(fields: [registroId], references: [id])
+}
+
+//////////////////////
+// PROGRAMA DE MANTENIMIENTO
+//////////////////////
+
+model PlantillaMantenimiento {
+  id            Int      @id @default(autoincrement())
+  numeralNom    String
+  actividad     String
+  periodicidad  PeriodicidadBitacora
+  activa        Boolean  @default(true)
+
+  programas     ProgramaMantenimiento[]
+}
+
+model ProgramaMantenimiento {
+  id           Int      @id @default(autoincrement())
+  estacionId   Int
+  plantillaId  Int
+
+  activo       Boolean  @default(true)
+  fechaInicio  DateTime @default(now())
+
+  estacion     Estacion @relation(fields: [estacionId], references: [id])
+  plantilla    PlantillaMantenimiento @relation(fields: [plantillaId], references: [id])
+
+  mantenimientos Mantenimiento[]
+
+  @@unique([estacionId, plantillaId])
 }
 
 //////////////////////

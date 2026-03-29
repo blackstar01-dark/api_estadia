@@ -12,13 +12,14 @@ import {
   HttpStatus,
   UseGuards,
   Req,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { RegistroBitacoraService } from './registrobitacora.service';
 import { CreateRegistroBitacoraDto } from './dto/create-registrobitacora.dto';
 import { UpdateRegistroBitacoraDto } from './dto/update-registrobitacora.dto';
-import { JwtAuthGuardPersonal } from 'src/authpersonal/guards/jwt-auth.guard';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { JwtCookieGuard } from 'src/auth/guards/jwt-cookie.guard';
+import type { RequestWithPersonal } from 'src/authpersonal/interface/request-with-personal-interface';
 
 @Controller('registrobitacora')
 export class RegistroBitacoraController {
@@ -32,9 +33,12 @@ export class RegistroBitacoraController {
   @Post()
   @UseGuards(JwtCookieGuard)
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateRegistroBitacoraDto, @Req() req: any) {
-    const personalID = req.user.id;
-    return this.registroBitacoraService.create(dto, personalID);
+  create(
+    @Body() dto: CreateRegistroBitacoraDto,
+    @Req() req: RequestWithPersonal,
+  ) {
+    const personalId = req.user.id;
+    return this.registroBitacoraService.create(dto, personalId);
   }
 
   // ==========================
@@ -42,18 +46,20 @@ export class RegistroBitacoraController {
   // ==========================
   @Get()
   findAll(
-    @Query('page', ParseIntPipe) page = 1,
-    @Query('limit', ParseIntPipe) limit = 20,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     return this.registroBitacoraService.findAll(page, limit);
   }
 
   // ==========================
-  // FIND ONE
+  // FIND BY PERSONAL (🔥 IMPORTANTE ARRIBA)
   // ==========================
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.registroBitacoraService.findOne(id);
+  @Get('mis-registros')
+  @UseGuards(JwtCookieGuard)
+  findMisRegistros(@Req() req: RequestWithPersonal) {
+    const personalId = req.user.id;
+    return this.registroBitacoraService.findByPersonal(personalId);
   }
 
   // ==========================
@@ -62,9 +68,16 @@ export class RegistroBitacoraController {
   @Get('bitacora/:id')
   @UseGuards(JwtAuthGuard)
   findByBitacora(@Param('id', ParseIntPipe) id: number) {
-    return this.registroBitacoraService.findByBitacora(id)
+    return this.registroBitacoraService.findByBitacora(id);
   }
 
+  // ==========================
+  // FIND ONE (⚠️ SIEMPRE AL FINAL)
+  // ==========================
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.registroBitacoraService.findOne(id);
+  }
 
   // ==========================
   // UPDATE

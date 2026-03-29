@@ -8,6 +8,7 @@ import {
   Param,
   ParseIntPipe,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { EstacionService } from './estacion.service';
 import { CreateEstacionDto } from './dto/create-estacion.dto';
@@ -17,6 +18,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { AuthUser } from 'src/auth/interface/auth-user.interface';
+import type { RequestWithPersonal } from 'src/authpersonal/interface/request-with-personal-interface';
 
 @Controller('estaciones')
 export class EstacionController {
@@ -26,6 +28,13 @@ export class EstacionController {
   @Get()
   async findAllPublic() {
     return this.estacionService.findAllPublic();
+  }
+
+  @Get('mis-estaciones')
+  @UseGuards(JwtCookieGuard)
+  findMisEstaciones(@Req() req: RequestWithPersonal) {
+    const personalId = req.user.id;
+    return this.estacionService.findByPersonal(personalId);
   }
 
   @Get(':id')

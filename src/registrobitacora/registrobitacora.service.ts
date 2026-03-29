@@ -7,25 +7,52 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRegistroBitacoraDto } from './dto/create-registrobitacora.dto';
 import { UpdateRegistroBitacoraDto } from './dto/update-registrobitacora.dto';
-import { Prisma } from 'generated/prisma/client';
+import { Prisma, PeriodicidadBitacora } from 'generated/prisma/client';
 
 @Injectable()
 export class RegistroBitacoraService {
   constructor(private readonly prisma: PrismaService) {}
 
   // ==========================
+  // 🔥 LÓGICA CENTRALIZADA
+  // ==========================
+  private resolverPeriodicidad(
+    tipo: string,
+    dto: CreateRegistroBitacoraDto,
+  ): PeriodicidadBitacora | null {
+    switch (tipo) {
+      case 'OPERACION_MANTENIMIENTO':
+        if (!dto.periodicidad) {
+          throw new BadRequestException(
+            'La periodicidad es obligatoria para mantenimiento',
+          );
+        }
+        return dto.periodicidad;
+
+      case 'DESCARGA_PIPAS':
+        return dto.periodicidad ?? 'DIARIA';
+
+      case 'OTRO':
+        return dto.periodicidad ?? null;
+
+      default:
+        return null;
+    }
+  }
+
+  // ==========================
   // CREATE
   // ==========================
   async create(dto: CreateRegistroBitacoraDto, personalId: number) {
-    if(!personalId) {
-      throw new ConflictException("Id personal es obligatorio");
+    if (!personalId) {
+      throw new ConflictException('Id personal es obligatorio');
     }
 
     const persona = await this.prisma.personaAutorizada.findUnique({
       where: { id: personalId },
     });
 
-    if(!persona) {
+    if (!persona) {
       throw new NotFoundException('Personal no autorizado');
     }
 
@@ -34,39 +61,106 @@ export class RegistroBitacoraService {
     });
 
     if (!bitacora) {
-      throw new NotFoundException('Bitácora no encontrada')
+      throw new NotFoundException('Bitácora no encontrada');
     }
 
-    const exists = await this.prisma.registroBitacora.findFirst({
-      where: {
-        bitacoraId: dto.bitacoraId,
-        folio: dto.folio,
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      // ======================
+      // FOLIO AUTOMÁTICO
+      // ======================
+      const lastRegistro = await tx.registroBitacora.findFirst({
+        where: { bitacoraId: dto.bitacoraId },
+        orderBy: { folio: 'desc' },
+      });
 
-    if (exists) {
-      throw new ConflictException('El folio ya existe para esta bitácora')
-    }
+      const nextFolio = lastRegistro ? lastRegistro.folio + 1 : 1;
 
-    try {
-      return await this.prisma.registroBitacora.create({
+      // ======================
+      // 🔥 RESOLVER PERIODICIDAD
+      // ======================
+      const periodicidadFinal = this.resolverPeriodicidad(bitacora.tipo, dto);
+
+      const registro = await tx.registroBitacora.create({
         data: {
-          folio: dto.folio,
+          folio: nextFolio,
           descripcion: dto.descripcion,
           firmaHashRegistro: dto.firmaHashRegistro,
           personaId: personalId,
           bitacoraId: dto.bitacoraId,
           estacionId: dto.estacionId,
-          periodicidad: dto.periodicidad,
+          periodicidad: periodicidadFinal,
         },
       });
-    } catch (error) {
-      this.handlePrismaError(error)
-    }
+
+      // ======================
+      // MANTENIMIENTO
+      // ======================
+      if (bitacora.tipo === 'OPERACION_MANTENIMIENTO') {
+        if (!dto.programaId) {
+          throw new BadRequestException('programaId es requerido');
+        }
+
+        if (!dto.tipoMantenimiento) {
+          throw new BadRequestException('tipoMantenimiento es requerido');
+        }
+
+        const programa = await tx.programaMantenimiento.findFirst({
+          where: {
+            id: dto.programaId,
+            estacionId: dto.estacionId,
+          },
+          include: {
+            plantilla: true,
+          },
+        });
+
+        if (!programa) {
+          throw new NotFoundException(
+            'Programa de mantenimiento no encontrado',
+          );
+        }
+
+        await tx.mantenimiento.create({
+          data: {
+            registroId: registro.id,
+            tipo: dto.tipoMantenimiento,
+            actividad: programa.plantilla.actividad,
+            observaciones: dto.observaciones,
+            programaId: programa.id,
+          },
+        });
+      }
+
+      // ======================
+      // DESCARGA PIPA
+      // ======================
+      if (bitacora.tipo === 'DESCARGA_PIPAS') {
+        if (
+          !dto.numeroPipa ||
+          !dto.producto ||
+          dto.volumenRecibido === undefined ||
+          !dto.proveedor
+        ) {
+          throw new BadRequestException('Datos de descarga incompletos');
+        }
+
+        await tx.descargaPipa.create({
+          data: {
+            registroId: registro.id,
+            numeroPipa: dto.numeroPipa,
+            producto: dto.producto,
+            volumenRecibido: dto.volumenRecibido,
+            proveedor: dto.proveedor,
+          },
+        });
+      }
+
+      return registro;
+    });
   }
 
   // ==========================
-  // FIND ALL (PAGINADO)
+  // FIND ALL
   // ==========================
   async findAll(page = 1, limit = 20) {
     if (page < 1 || limit < 1) {
@@ -85,15 +179,32 @@ export class RegistroBitacoraService {
   }
 
   // ==========================
+  // FIND BY PERSONAL
+  // ==========================
+  async findByPersonal(personalId: number) {
+    if (!personalId) {
+      throw new BadRequestException('Id personal inválido');
+    }
+
+    return this.prisma.registroBitacora.findMany({
+      where: { personaId: personalId },
+      orderBy: { fechaHora: 'desc' },
+      include: {
+        bitacora: { select: { id: true, tipo: true } },
+      },
+    });
+  }
+
+  // ==========================
   // FIND BY BITACORA
   // ==========================
   async findByBitacora(bitacoraId: number) {
-    if(!bitacoraId || bitacoraId < 1) {
+    if (!bitacoraId || bitacoraId < 1) {
       throw new BadRequestException('ID de bitácora inválido');
     }
 
     const bitacoraExists = await this.prisma.bitacora.findUnique({
-      where: { id: bitacoraId},
+      where: { id: bitacoraId },
     });
 
     if (!bitacoraExists) {
@@ -102,10 +213,10 @@ export class RegistroBitacoraService {
 
     return this.prisma.registroBitacora.findMany({
       where: { bitacoraId },
-      orderBy: { fechaHora: 'desc'},
+      orderBy: { fechaHora: 'desc' },
       include: {
         persona: {
-          select: { id: true, nombre: true}
+          select: { id: true, nombre: true },
         },
       },
     });
@@ -172,7 +283,7 @@ export class RegistroBitacoraService {
   }
 
   // ==========================
-  // PRISMA ERROR HANDLER
+  // ERROR HANDLER
   // ==========================
   private handlePrismaError(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {

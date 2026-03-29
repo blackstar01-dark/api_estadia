@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Param,
   ParseIntPipe,
@@ -9,18 +8,27 @@ import {
   HttpCode,
   HttpStatus,
   DefaultValuePipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { BitacoraService } from './bitacora.service';
-import { CreateBitacoraDto } from './dto/create-bitacora.dto';
+import { JwtCookieGuard } from 'src/auth/guards/jwt-cookie.guard';
+import type { RequestWithPersonal } from 'src/authpersonal/interface/request-with-personal-interface';
 
 @Controller('bitacora')
 export class BitacoraController {
   constructor(private readonly bitacoraService: BitacoraService) {}
 
   // ==========================
-  // CREATE (ÚNICA OPERACIÓN DE ESCRITURA)
+  // FIND PERSONAL
   // ==========================
- 
+  @Get('mis-bitacoras')
+  @UseGuards(JwtCookieGuard)
+  @HttpCode(HttpStatus.OK)
+  findMisBitacoras(@Req() req: RequestWithPersonal) {
+    const personalId = req.user.id;
+    return this.bitacoraService.findByPersonal(personalId);
+  }
 
   // ==========================
   // FIND ALL (PAGINADO)

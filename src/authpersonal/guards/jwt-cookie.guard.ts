@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { jwtVerify } from 'jose';
 
-
 @Injectable()
 export class JwtCookieGuardPersonal implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -30,8 +29,8 @@ export class JwtCookieGuardPersonal implements CanActivate {
             };
 
             return true;
-        }catch (err) {
-            throw new UnauthorizedException('Token inválido o expirado');
-        }
+    } catch (err) {
+      throw new UnauthorizedException('Token inválido o expirado');
     }
+  }
 }

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEstacionDto } from './dto/create-estacion.dto';
@@ -21,6 +22,25 @@ export class EstacionService {
 
   async count(): Promise<number> {
     return this.prisma.estacion.count();
+  }
+
+  async findByPersonal(personalId: number) {
+    if (!personalId) {
+      throw new BadRequestException('Id personal inválido');
+    }
+
+    return this.prisma.estacion.findMany({
+      where: {
+        personas: {
+          some: {
+            id: personalId,
+          },
+        },
+      },
+      include: {
+        personas: true,
+      },
+    });
   }
 
   async findOnePublic(id: number) {
@@ -70,7 +90,7 @@ export class EstacionService {
           },
           {
             tipo: 'DESCARGA_PIPAS',
-            estacionId: nuevaEstacion.id
+            estacionId: nuevaEstacion.id,
           },
           {
             tipo: 'OPERACION_MANTENIMIENTO',
@@ -78,9 +98,8 @@ export class EstacionService {
           },
         ],
       });
-
       return nuevaEstacion;
-    })
+    });
   }
 
   async update(id: number, dto: UpdateEstacionDto, adminId: number) {

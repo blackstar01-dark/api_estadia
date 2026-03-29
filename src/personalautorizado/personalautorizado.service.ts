@@ -20,10 +20,10 @@ export class PersonalautorizadoService {
   async create(dto: CreatePersonaAutorizadaDto, userId: number) {
     // Validar estación
     const estacion = await this.prisma.estacion.findFirst({
-      where: { 
+      where: {
         id: dto.estacionId,
         adminId: userId,
-       },
+      },
     });
 
     if (!estacion) {
@@ -43,11 +43,10 @@ export class PersonalautorizadoService {
         'La persona autorizada ya existe en esta estación',
       );
     }
-    
     const firmaHash = crypto
-    .createHash('sha256')
-    .update(dto.firmaHashPersona)
-    .digest('hex');
+      .createHash('sha256')
+      .update(dto.firmaHashPersona)
+      .digest('hex');
 
     return this.prisma.personaAutorizada.create({
       data: {
@@ -61,19 +60,14 @@ export class PersonalautorizadoService {
   }
 
   async validatePersonal(nombre: string, firma?: string) {
-    if (!firma) return null
+    if (!firma) return null;
 
     const persona = await this.prisma.personaAutorizada.findFirst({
       where: { nombre },
     });
 
-    if(!persona) return null;
-
-    const firmaHash = crypto
-    .createHash('sha256')
-    .update(firma)
-    .digest('hex');
-
+    if (!persona) return null;
+    const firmaHash = crypto.createHash('sha256').update(firma).digest('hex');
     if (persona.firmaHashPersona !== firmaHash) return null;
 
     return persona;
@@ -112,8 +106,8 @@ export class PersonalautorizadoService {
             id: true,
             nombre: true,
             correo: true,
-          }
-        }
+          },
+        },
       },
     });
   }
