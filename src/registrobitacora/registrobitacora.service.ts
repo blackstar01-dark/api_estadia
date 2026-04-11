@@ -211,13 +211,13 @@ export class RegistroBitacoraService {
       throw new NotFoundException('Bitácora no encontrada');
     }
 
+    // 🔥 Incluye persona y bitacora para que frontend tenga los datos
     return this.prisma.registroBitacora.findMany({
       where: { bitacoraId },
       orderBy: { fechaHora: 'desc' },
       include: {
-        persona: {
-          select: { id: true, nombre: true },
-        },
+        persona: { select: { id: true, nombre: true } }, // nombre del registrador
+        bitacora: { select: { id: true, tipo: true } }, // tipo de bitácora
       },
     });
   }
