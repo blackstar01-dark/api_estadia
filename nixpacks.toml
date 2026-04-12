@@ -1,5 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm install --production"]
+
 [phases.build]
-cmds = ["npx prisma generate", "npm run build"]
+cmds = ["npx prisma generate"]
 
 [start]
-cmd = "node dist/main"
+cmd = "node dist/main.js"
