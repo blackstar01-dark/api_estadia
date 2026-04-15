@@ -38,16 +38,16 @@ Crea un archivo `.env` en la raíz del proyecto:
 
 ```env
 # Connect to Supabase via connection pooling
-DATABASE_URL="postgresql://postgres.gjgcdykmerahusotxibb:3317017364Ab@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DATABASE_URL
 
 # Direct connection to the database (migraciones)
-DIRECT_URL="postgresql://postgres.gjgcdykmerahusotxibb:3317017364Ab@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+DIRECT_URL
 
 # JWT
-JWT_SECRET=3317017364Ab
-JWT_ACCESS_EXPIRES=15m
-JWT_REFRESH_SECRET=3317017364Ab
-JWT_REFRESH_EXPIRES=7d
+JWT_SECRET
+JWT_ACCESS_EXPIRES
+JWT_REFRESH_SECRET
+JWT_REFRESH_EXPIRES
 ```
 
 ---
